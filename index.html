@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Acquaintance Party · Check-in &amp; Food</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f4f0fa;
+        --ink: #1f1630;
+        --mute: #6b5f80;
+        --card: #fff;
+        --line: #ddd3ec;
+        --accent: #5b2bd6;
+        --ok: #0f8a4b;
+        --warn: #b86e00;
+        --bad: #c42b3a;
+        --gold: #f2b705;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #150e24;
+          --ink: #f1eaff;
+          --mute: #a597bf;
+          --card: #211733;
+          --line: #38294f;
+          --accent: #a98bff;
+          --ok: #43d68a;
+          --warn: #f0b24a;
+          --bad: #ff6b7a;
+          color-scheme: dark;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          16px/1.5 "Bricolage Grotesque",
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        min-height: 100vh;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 20px 8px;
+        max-width: 960px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin: 0;
+        letter-spacing: -0.02em;
+      }
+      .count {
+        font-weight: 600;
+        color: var(--mute);
+      }
+      .count b {
+        color: var(--ink);
+        font-size: 1.25rem;
+      }
+      nav {
+        display: flex;
+        gap: 6px;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+      nav button {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--ink);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 10px 10px 0 0;
+        border-bottom: none;
+      }
+      nav button[aria-selected="true"] {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 20px 40px;
+      }
+      section {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 0 0 14px 14px;
+        padding: 20px;
+      }
+      section[hidden] {
+        display: none;
+      }
+      button.btn {
+        font: inherit;
+        font-weight: 600;
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--ink);
+        cursor: pointer;
+      }
+      button.btn.primary {
+        background: var(--accent);
+        color: var(--bg);
+        border-color: var(--accent);
+      }
+      :root:not([data-theme="dark"]) button.btn.primary {
+        color: #fff;
+      }
+      button:focus-visible,
+      input:focus-visible {
+        outline: 3px solid var(--gold);
+        outline-offset: 2px;
+      }
+      input[type="text"] {
+        font: inherit;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+        color: var(--ink);
+        flex: 1;
+        min-width: 0;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 20px;
+      }
+      @media (max-width: 720px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      #reader {
+        width: 100%;
+        min-height: 260px;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      #result {
+        margin-top: 12px;
+        padding: 16px;
+        border-radius: 12px;
+        border: 2px solid var(--line);
+        min-height: 84px;
+        transition:
+          background 0.2s,
+          border-color 0.2s;
+      }
+      #result strong {
+        display: block;
+        font-size: 1.35rem;
+        line-height: 1.2;
+      }
+      #result.ok {
+        border-color: var(--ok);
+        background: color-mix(in srgb, var(--ok) 16%, transparent);
+      }
+      #result.dupe {
+        border-color: var(--warn);
+        background: color-mix(in srgb, var(--warn) 16%, transparent);
+      }
+      #result.bad {
+        border-color: var(--bad);
+        background: color-mix(in srgb, var(--bad) 16%, transparent);
+      }
+      h2 {
+        font-size: 1.1rem;
+        margin: 0 0 10px;
+      }
+      .log {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 420px;
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      .log li {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--line);
+      }
+      .log li:last-child {
+        border: none;
+      }
+      .log small {
+        color: var(--mute);
+        white-space: nowrap;
+      }
+      .empty {
+        padding: 14px;
+        color: var(--mute);
+      }
+      .hint {
+        color: var(--mute);
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Acquaintance Party</h1>
+      <div class="count">
+        <b id="cIn">0</b> checked in<span id="cOf"></span> ·
+        <b id="cFood">0</b> meals claimed
+        <div class="hint" id="sync" role="status"></div>
+      </div>
+    </header>
+    <nav role="tablist">
+      <button role="tab" aria-selected="true" data-tab="scan">
+        Attendance
+      </button>
+      <button role="tab" aria-selected="false" data-tab="food">Food</button>
+      <button role="tab" aria-selected="false" data-tab="list">
+        Checked-in list
+      </button>
+    </nav>
+    <main>
+      <section id="scan">
+        <div class="grid">
+          <div>
+            <div id="reader"></div>
+            <div class="row">
+              <button class="btn primary" id="camBtn">Start camera</button>
+              <button class="btn" id="camSwap" hidden>Switch camera</button>
+            </div>
+            <p class="hint" id="camMsg">
+              The camera needs HTTPS or localhost. Tap “Start camera” and allow
+              access.
+            </p>
+          </div>
+          <div>
+            <h2 id="modeTitle">Attendance: scan the ENTRY QR</h2>
+            <div id="result" aria-live="polite">
+              <span class="hint">Scan a QR code to check someone in.</span>
+            </div>
+            <div class="row">
+              <input
+                type="text"
+                id="manual"
+                list="names"
+                placeholder="No QR? Type the name"
+                autocomplete="off"
+              />
+              <button class="btn" id="manualBtn">Check in</button>
+            </div>
+            <datalist id="names"></datalist>
+          </div>
+        </div>
+      </section>
+
+      <section id="list" hidden>
+        <div class="row" style="margin: 0 0 12px">
+          <button class="btn" id="csvBtn">Download attendance CSV</button>
+        </div>
+        <ul class="log" id="log"></ul>
+      </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="attendees.js"></script>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const KEY = "acq_party_state_v2";
+      const ATT = Array.isArray(window.ATTENDEES) ? window.ATTENDEES : [];
+      let state = { checkins: {}, food: {} }; // key -> {name, dept, time, via}
+      let mode = "entry"; // "entry" = attendance QR, "food" = food QR (one meal each)
+
+      const norm = (s) =>
+        s
+          .normalize("NFC")
+          .toLowerCase()
+          .replace(/[^\p{L}\p{N}\s]/gu, " ")
+          .split(/\s+/)
+          .filter(Boolean)
+          .sort()
+          .join(" ");
+      const byKey = new Map(ATT.map((a) => [norm(a.name), a]));
+
+      function load() {
+        try {
+          const s = JSON.parse(localStorage.getItem(KEY));
+          if (s && s.checkins)
+            state = { checkins: s.checkins, food: s.food || {} };
+        } catch (e) {}
+      }
+      function save() {
+        try {
+          localStorage.setItem(KEY, JSON.stringify(state));
+        } catch (e) {}
+      }
+
+      /* ---------- Firebase (Firestore) with offline fallback ---------- */
+      const cfg = window.FIREBASE_CONFIG || {};
+      const wantCloud = !!(
+        window.firebase &&
+        cfg.apiKey &&
+        !/PASTE/i.test(cfg.apiKey)
+      );
+      let db = null;
+      function setStatus(t, ok) {
+        const e = $("sync");
+        e.textContent = t;
+        e.style.color = ok ? "var(--ok)" : "var(--warn)";
+      }
+      async function init() {
+        if (!wantCloud) {
+          load();
+          render();
+          setStatus(
+            "Not connected to Firebase: saved on this device only",
+            false,
+          );
+          return;
+        }
+        try {
+          firebase.initializeApp(cfg);
+          await firebase.auth().signInAnonymously();
+          db = firebase.firestore();
+          const fail = (e) => setStatus("Sync error: " + e.message, false);
+          db.collection("checkins").onSnapshot((s) => {
+            state.checkins = {};
+            s.forEach((d) => (state.checkins[d.id] = d.data()));
+            render();
+          }, fail);
+          db.collection("food").onSnapshot((s) => {
+            state.food = {};
+            s.forEach((d) => (state.food[d.id] = d.data()));
+            render();
+          }, fail);
+          setStatus("Live sync with Firebase is on", true);
+        } catch (e) {
+          db = null;
+          load();
+          render();
+          setStatus(
+            "Firebase error: " + e.message + ". Using this device only.",
+            false,
+          );
+        }
+      }
+      const clock = (t) =>
+        new Date(t).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+      /* ---------- attendance ---------- */
+      function playSound(type) {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          if (type === "ok") {
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.15);
+          } else {
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(250, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.3);
+          }
+        } catch (e) {}
+      }
+
+      function show(cls, name, msg) {
+        const r = $("result");
+        r.className = cls;
+        r.innerHTML = "";
+
+        const icon = cls === "ok" ? "✅ " : cls === "dupe" ? "⚠️ " : "❌ ";
+
+        const s = document.createElement("strong");
+        s.textContent = icon + name;
+        const m = document.createElement("span");
+        m.textContent = msg;
+        r.append(s, m);
+
+        playSound(cls);
+
+        if (navigator.vibrate)
+          try {
+            navigator.vibrate(cls === "ok" ? 80 : [80, 60, 80]);
+          } catch (e) {}
+      }
+
+      async function sha256hex(s) {
+        const b = await crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(s),
+        );
+        return [...new Uint8Array(b)]
+          .map((x) => x.toString(16).padStart(2, "0"))
+          .join("");
+      }
+      function splitPayload(raw) {
+        const t = String(raw).trim(),
+          i = t.lastIndexOf("|");
+        return i < 0
+          ? { name: t, code: "" }
+          : { name: t.slice(0, i).trim(), code: t.slice(i + 1).trim() };
+      }
+      async function checkIn(raw, via) {
+        const food = mode === "food";
+        const coll = food ? "food" : "checkins";
+        const bucket = food ? state.food : state.checkins;
+        const { name: text, code } = splitPayload(raw);
+        const key = norm(text);
+        if (!key) return;
+        const known = byKey.get(key);
+        if (!known && ATT.length) {
+          show(
+            "bad",
+            text,
+            "Not on the confirmed list. Do not " +
+              (food ? "serve" : "let in") +
+              " until payment is checked.",
+          );
+          return;
+        }
+        const want = food ? known && known.fh : known && known.h;
+        if (known && food && !known.fh && via === "qr") {
+          show(
+            "bad",
+            known.name,
+            "The guest list on this page is old (no food codes). Run send_qr.py again and redeploy.",
+          );
+          return;
+        }
+        if (known && want && (via === "qr" || code)) {
+          if (!code) {
+            show(
+              "bad",
+              known.name,
+              "This QR has no security code, so it is not a valid " +
+                (food ? "food ticket" : "ticket") +
+                ". Do not " +
+                (food ? "serve." : "let in."),
+            );
+            return;
+          }
+          if (!(window.crypto && crypto.subtle)) {
+            show(
+              "bad",
+              known.name,
+              "Security check unavailable. Open this page on https or localhost.",
+            );
+            return;
+          }
+          const hash = await sha256hex(key + ":" + code.toUpperCase());
+          if (hash !== want) {
+            const other = food ? known.h : known.fh;
+            show(
+              "bad",
+              known.name,
+              other && hash === other
+                ? food
+                  ? "This is an ENTRY QR, not a food QR. Ask for the food QR."
+                  : "This is a FOOD QR, not an entry QR. Open the Food tab to serve it, or ask for the entry QR."
+                : "Invalid QR: the security code does not match. Do not " +
+                    (food ? "serve." : "let in."),
+            );
+            return;
+          }
+        }
+        const person = known || { name: text, dept: "" };
+        const rec = {
+          name: person.name,
+          dept: person.dept,
+          time: Date.now(),
+          via: via === "qr" ? "qr" : "typed",
+        };
+        if (db) {
+          try {
+            const ref = db.collection(coll).doc(key);
+            const prev = await db.runTransaction(async (t) => {
+              const s = await t.get(ref);
+              if (s.exists) return s.data();
+              t.set(ref, rec);
+              return null;
+            });
+            if (prev) {
+              show(
+                "dupe",
+                person.name,
+                food
+                  ? "Food already claimed at " +
+                      clock(prev.time) +
+                      ". One meal only."
+                  : "Already checked in at " + clock(prev.time) + ".",
+              );
+              return;
+            }
+          } catch (e) {
+            show(
+              "bad",
+              person.name,
+              "Not saved: " + e.message + " Scan again once you are online.",
+            );
+            return;
+          }
+        } else {
+          if (bucket[key]) {
+            show(
+              "dupe",
+              person.name,
+              food
+                ? "Food already claimed at " +
+                    clock(bucket[key].time) +
+                    ". One meal only."
+                : "Already checked in at " + clock(bucket[key].time) + ".",
+            );
+            return;
+          }
+          bucket[key] = rec;
+          save();
+          render();
+        }
+        show(
+          "ok",
+          person.name,
+          (food ? "Food claimed. Serve 1 meal" : "Checked in") +
+            (person.dept ? " · " + person.dept : "") +
+            ".",
+        );
+      }
+
+      let lastText = "",
+        lastAt = 0;
+      function onScan(text) {
+        const now = Date.now();
+        if (text === lastText && now - lastAt < 3000) return;
+        lastText = text;
+        lastAt = now;
+        checkIn(text, "qr");
+      }
+
+      /* ---------- camera ---------- */
+      let scanner = null,
+        cams = [],
+        camIdx = -1,
+        running = false;
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      function camHelp(e) {
+        const n = (e && (e.name || "")) + " " + (e && (e.message || e));
+        if (/NotReadable|Could not start video/i.test(n))
+          return "The camera is busy or blocked. Close other apps/tabs using it (Zoom, Teams, Camera app, another browser), check Windows Settings > Privacy > Camera, then press Start camera again.";
+        if (/NotAllowed|Permission/i.test(n))
+          return "Camera permission is blocked. Click the lock/camera icon in the address bar, set Camera to Allow, then reload.";
+        if (/NotFound|No camera/i.test(n))
+          return "No camera was found on this device.";
+        return String(e && (e.message || e));
+      }
+      async function startCam() {
+        if (typeof Html5Qrcode === "undefined") {
+          $("camMsg").textContent =
+            "Scanner library did not load. Check your internet connection.";
+          return;
+        }
+        if (!window.isSecureContext) {
+          $("camMsg").textContent =
+            "This page is not secure. Open it as http://localhost or http://127.0.0.1 (not a 192.168.x.x address) or use the https link.";
+          return;
+        }
+        const box = {
+          fps: 10,
+          qrbox: (s) => {
+            const n = Math.floor(Math.min(s.width, s.height) * 0.75);
+            return { width: n, height: n };
+          },
+        };
+        scanner = scanner || new Html5Qrcode("reader");
+        const attempts = [
+          ...(camIdx >= 0 && cams[camIdx] ? [cams[camIdx].id] : []),
+          { facingMode: "environment" },
+          { facingMode: "user" },
+        ];
+        let err = null;
+        $("camMsg").textContent = "Starting camera...";
+        for (const a of attempts) {
+          try {
+            await scanner.start(a, box, onScan, () => {});
+            running = true;
+            err = null;
+            break;
+          } catch (e) {
+            err = e;
+            try {
+              await scanner.stop();
+            } catch (x) {}
+            await sleep(500);
+          }
+        }
+        if (!running) {
+          $("camMsg").textContent = "Camera error: " + camHelp(err);
+          return;
+        }
+        $("camBtn").textContent = "Stop camera";
+        $("camMsg").textContent =
+          "Camera is on. Hold the QR code inside the square.";
+        try {
+          cams = await Html5Qrcode.getCameras();
+          $("camSwap").hidden = cams.length < 2;
+        } catch (e) {}
+      }
+      async function stopCam() {
+        try {
+          await scanner.stop();
+        } catch (e) {}
+        running = false;
+        $("camBtn").textContent = "Start camera";
+        $("camMsg").textContent = "Camera is off.";
+      }
+      $("camBtn").onclick = () => (running ? stopCam() : startCam());
+      $("camSwap").onclick = async () => {
+        camIdx = (camIdx + 1) % cams.length;
+        await stopCam();
+        await sleep(400);
+        await startCam();
+      };
+      $("manualBtn").onclick = () => {
+        checkIn($("manual").value, "manual");
+        $("manual").value = "";
+      };
+      $("manual").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") $("manualBtn").click();
+      });
+
+      /* ---------- list, export ---------- */
+      const csvCell = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+      $("csvBtn").onclick = () => {
+        const all = {};
+        Object.entries(state.checkins).forEach(
+          ([k, v]) => (all[k] = { ...v, inTime: v.time }),
+        );
+        Object.entries(state.food).forEach(([k, v]) => {
+          all[k] = {
+            ...(all[k] || { name: v.name, dept: v.dept }),
+            foodTime: v.time,
+          };
+        });
+        const people = Object.values(all).sort(
+          (a, b) =>
+            (a.dept ? 0 : 1) - (b.dept ? 0 : 1) ||
+            (a.dept || "").localeCompare(b.dept || "") ||
+            a.name.localeCompare(b.name),
+        );
+        const when = (t) => (t ? new Date(t).toLocaleString() : "");
+        const rows = [
+          ["Department", "Name", "Checked in", "Method", "Food claimed"],
+        ];
+        people.forEach((v) =>
+          rows.push([
+            v.dept || "(no department)",
+            v.name,
+            when(v.inTime),
+            v.via || "",
+            when(v.foodTime),
+          ]),
+        );
+        const blob = new Blob(
+          ["\ufeff" + rows.map((r) => r.map(csvCell).join(",")).join("\r\n")],
+          { type: "text/csv" },
+        );
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "attendance_by_department.csv";
+        a.click();
+      };
+
+      function render() {
+        const list = Object.values(state.checkins).sort(
+          (a, b) => b.time - a.time,
+        );
+        $("cIn").textContent = list.length;
+        $("cOf").textContent = ATT.length ? " of " + ATT.length : "";
+        $("cFood").textContent = Object.keys(state.food).length;
+        $("log").innerHTML = "";
+        if (!list.length) {
+          const li = document.createElement("li");
+          li.className = "empty";
+          li.textContent = "Nobody has checked in yet.";
+          $("log").append(li);
+        }
+        list.forEach((p) => {
+          const li = document.createElement("li"),
+            n = document.createElement("span"),
+            t = document.createElement("small");
+          n.textContent =
+            p.name +
+            (p.dept ? " · " + p.dept : "") +
+            (p.via === "typed" ? " · typed" : "") +
+            (state.food[norm(p.name)] ? " · food claimed" : "");
+          t.textContent = clock(p.time);
+          li.append(n, t);
+          $("log").append(li);
+        });
+      }
+
+      /* ---------- tabs ---------- */
+      function applyMode() {
+        const food = mode === "food";
+        $("modeTitle").textContent = food
+          ? "Food: scan the FOOD QR (1 meal each)"
+          : "Attendance: scan the ENTRY QR";
+        $("manualBtn").textContent = food ? "Give food" : "Check in";
+        $("result").className = "";
+        $("result").innerHTML =
+          '<span class="hint">' +
+          (food
+            ? "Scan a food QR to give one meal."
+            : "Scan a QR code to check someone in.") +
+          "</span>";
+      }
+      document.querySelectorAll("nav button").forEach(
+        (b) =>
+          (b.onclick = () => {
+            document
+              .querySelectorAll("nav button")
+              .forEach((x) => x.setAttribute("aria-selected", x === b));
+            const tab = b.dataset.tab;
+            if (tab === "scan" || tab === "food") {
+              mode = tab === "food" ? "food" : "entry";
+              applyMode();
+            }
+            const show = tab === "food" ? "scan" : tab;
+            ["scan", "list"].forEach((id) => ($(id).hidden = id !== show));
+          }),
+      );
+
+      ATT.forEach((a) => {
+        const o = document.createElement("option");
+        o.value = a.name;
+        $("names").append(o);
+      });
+      init();
+    </script>
+  </body>
+</html>
